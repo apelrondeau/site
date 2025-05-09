@@ -62,24 +62,37 @@
       height: 200px;
       background-color: white;
     }
+
+    .title-color {
+      color: rgb(206, 0, 127) !important;
+      display: inline;
+    }
+    .subtitle-color {
+      color: rgb(29, 179, 174) !important;
+      display: inline;
+    }
+
   </style>
 </head>
 <body class="uk-container uk-margin-large-top">
 
   <h2 class="uk-heading-line"><span>Ajouter une Actualité</span></h2>
 
-  <input type="file" id="htmlFile" accept=".html" class="uk-margin">
+  <div class="uk-margin">
+    <label for="htmlFile" class="uk-button uk-button-primary  uk-button-small">📂 Charger le fichier du site</label>
+    <input type="file" id="htmlFile" accept=".html" style="display: none;">
+  </div>
 
   <form id="news-form" class="uk-form-stacked uk-margin-bottom">
     <div class="uk-margin">
-      <label class="uk-form-label">Titre</label>
+      <label class="uk-form-label title-color">Titre de l'actu (Obligatoire)</label>
       <div class="uk-form-controls">
         <input class="uk-input" type="text" name="title" required>
       </div>
     </div>
 
     <div class="uk-margin">
-      <label class="uk-form-label">Sous-titre</label>
+      <label class="uk-form-label subtitle-color">Sous-titre</label>
       <div class="uk-form-controls">
         <input class="uk-input" type="text" name="subtitle">
       </div>
@@ -96,7 +109,7 @@
     <div class="uk-margin">
       <label class="uk-form-label">Image (URL)</label>
       <div class="uk-form-controls">
-        <input class="uk-input" type="url" name="image" required>
+        <input class="uk-input" type="url" name="image" id="imageInput" placeholder="https://example.com/default.jpg">
       </div>
     </div>
 
@@ -111,7 +124,7 @@
       </div>
     </div>
 
-    <button type="submit" class="uk-button uk-button-primary">Générer et Injecter</button>
+    <button type="submit" class="uk-button uk-button-primary  uk-button-small">Générer et Injecter</button>
   </form>
 
   <div id="extra-buttons" class="uk-margin"></div>
@@ -132,15 +145,57 @@
     const quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
-        toolbar: [
-          [{ 'header': [1, 2, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ 'color': [] }, { 'background': [] }],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          ['link', 'clean']
-        ]
+        toolbar: {
+          container: [
+            [{ 'header': [1, 2, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['titlecolor', 'subtitlecolor'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link', 'clean'],
+          ],
+          handlers: {
+            'titlecolor': function () {
+              applyCustomColor('rgb(206, 0, 127)');
+            },
+            'subtitlecolor': function () {
+              applyCustomColor('rgb(29, 179, 174)');
+            }
+          }
+        }
       }
     });
+
+    // Add custom toolbar buttons for titlecolor and subtitlecolor
+    const toolbar = quill.getModule('toolbar');
+    const redBtn = document.createElement('button');
+    redBtn.type = 'button';
+    redBtn.addEventListener('click', () => applyCustomColor('rgb(206, 0, 127)'));
+    redBtn.style.backgroundColor = 'rgb(206, 0, 127)';
+    redBtn.style.width = '20px';
+    redBtn.style.height = '20px';
+    redBtn.style.border = 'none';
+    redBtn.style.marginLeft = '8px';
+    redBtn.title = 'Texte rose';
+    toolbar.container.appendChild(redBtn);
+
+    const blueBtn = document.createElement('button');
+    blueBtn.type = 'button';
+    blueBtn.addEventListener('click', () => applyCustomColor('rgb(29, 179, 174)'));
+    blueBtn.style.backgroundColor = 'rgb(29, 179, 174)';
+    blueBtn.style.width = '20px';
+    blueBtn.style.height = '20px';
+    blueBtn.style.border = 'none';
+    blueBtn.style.marginLeft = '4px';
+    blueBtn.title = 'Texte turquoise';
+    toolbar.container.appendChild(blueBtn);
+
+    function applyCustomColor(color) {
+      const range = quill.getSelection();
+      if (range) {
+        quill.format('color', color);
+      }
+    }
 
     function extractFirstTopicBlockClass(html) {
       const match = html.match(/<div class="topic-block\s*(reverse)?">/);
@@ -182,6 +237,10 @@
 
       const data = Object.fromEntries(new FormData(e.target).entries());
 
+      if (!data.image || data.image.trim() === "") {
+        data.image = "https://photos.smugmug.com/photos/i-FXWhM4c/0/LCZnCfHxNCqGD98tPqQjZSKdVq24RPxjVDvFQDGFh/X2/i-FXWhM4c-X2.jpg";
+      }
+
       let blockClass = "";
       if (data.position === "auto") {
         blockClass = lastUsedClass === "reverse" ? "" : "reverse";
@@ -190,16 +249,16 @@
       }
 
       const newBlock = `
-<div class="topic-block ${blockClass}">
-  <div class="text" uk-scrollspy="cls: uk-animation-fade; delay: 500">
-    <h3 class="title-color">${data.title}</h3>
-    <h4 class="subtitle-color">${data.subtitle}</h4>
-    ${data.text}
-  </div>
-  <div class="image" uk-scrollspy="cls: uk-animation-slide-left; delay: 300">
-    <img src="${data.image}" alt="${data.title}">
-  </div>
-</div>`;
+        <div class="topic-block ${blockClass}">
+          <div class="text" uk-scrollspy="cls: uk-animation-fade; delay: 500">
+            <h3 class="title-color">${data.title}</h3>
+            <h4 class="subtitle-color">${data.subtitle}</h4>
+            ${data.text}
+          </div>
+          <div class="image" uk-scrollspy="cls: uk-animation-slide-left; delay: 300">
+            <img src="${data.image}" alt="${data.title}">
+          </div>
+        </div>`;
 
       workingHTML = workingHTML.replace(
         /(<ul[^>]*id="my-id"[^>]*>[\s\S]*?<li[^>]*class="uk-overflow-autoX">)/,
@@ -224,8 +283,8 @@
 
       const btnArea = document.getElementById("extra-buttons");
       btnArea.innerHTML = `
-        <button class="uk-button uk-button-default" onclick="resetForm()">➕ Ajouter une autre actu</button>
-        <a href="#" id="downloadLink" class="uk-button uk-button-secondary uk-margin-left">📥 Télécharger la version modifiée</a>
+        <button class="uk-button uk-button-secondary uk-button-small" onclick="resetForm()">➕ Ajouter une autre actu</button>
+        <a href="#" id="downloadLink" class="uk-button uk-button-danger uk-button-small uk-margin-left">📥 Télécharger la version modifiée</a>
       `;
 
       const blob = new Blob([workingHTML], { type: "text/html" });
